@@ -43,9 +43,12 @@
   },
   "homepage": "https://github.com/thing-it/cordova-plugin-deeplinks#readme",
   "devDependencies": {
+    "cordova-common": "^3.2.1",
     "standard-version": "^7.0.0"
   },
   "scripts": {
-    "release": "standard-version"
+    "release": "standard-version",
+    "version": "PLUGIN_VERSION=$npm_package_version node plugin-version && git add plugin.xml",
+    "postversion": "git push && git push --tags && npm publish"
   }
 }
