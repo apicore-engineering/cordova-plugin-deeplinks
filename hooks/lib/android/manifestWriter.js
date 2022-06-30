@@ -121,7 +121,7 @@ function isActionForUniversalLinks(actions) {
 
   var action = actions[0]['$']['android:name'];
 
-  return ('android.intent.action.VIEW' === action);
+  return ['android.intent.action.VIEW', 'android.nfc.action.NDEF_DISCOVERED'].includes(action);
 }
 
 /**
@@ -203,7 +203,7 @@ function injectOptions(manifestData, pluginPreferences) {
   // generate intent-filters
   pluginPreferences.hosts.forEach(function(host) {
     host.paths.forEach(function(hostPath) {
-      ulIntentFilters.push(createIntentFilter(host.name, host.scheme, hostPath));
+      ulIntentFilters.push(...createIntentFilters(host.name, host.scheme, hostPath));
     });
   });
 
@@ -272,7 +272,7 @@ function isLaunchActivity(activity) {
  * @param {String} pathName - host path
  * @return {Object} intent-filter as a JSON object
  */
-function createIntentFilter(host, scheme, pathName) {
+function createIntentFilters(host, scheme, pathName) {
   var intentFilter = {
     '$': {
       'android:autoVerify': 'true'
@@ -298,10 +298,31 @@ function createIntentFilter(host, scheme, pathName) {
       }
     }]
   };
-
   injectPathComponentIntoIntentFilter(intentFilter, pathName);
+  var nfcIntentFilter = {
+    '$': {
+      'android:autoVerify': 'true'
+    },
+    'action': [{
+      '$': {
+        'android:name': 'android.nfc.action.NDEF_DISCOVERED'
+      }
+    }],
+    'category': [{
+      '$': {
+        'android:name': 'android.intent.category.DEFAULT'
+      }
+    }],
+    'data': [{
+      '$': {
+        'android:host': host,
+        'android:scheme': scheme
+      }
+    }]
+  };
+  injectPathComponentIntoIntentFilter(nfcIntentFilter, pathName);
 
-  return intentFilter;
+  return [intentFilter, nfcIntentFilter];
 }
 
 /**

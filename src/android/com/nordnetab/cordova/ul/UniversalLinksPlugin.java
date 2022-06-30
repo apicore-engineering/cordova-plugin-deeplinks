@@ -2,6 +2,7 @@ package com.nordnetab.cordova.ul;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.nfc.NfcAdapter;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -181,7 +182,7 @@ public class UniversalLinksPlugin extends CordovaPlugin {
         Uri launchUri = intent.getData();
 
         // if app was not launched by the url - ignore
-        if (!Intent.ACTION_VIEW.equals(action) || launchUri == null) {
+        if ((!Intent.ACTION_VIEW.equals(action) && !NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) || launchUri == null) {
             Log.d("UniversalLinks", "App was not launched by the url: " + action);
             return;
         }
