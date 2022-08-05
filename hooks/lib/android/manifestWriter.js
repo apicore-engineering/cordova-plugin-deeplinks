@@ -275,6 +275,7 @@ function isLaunchActivity(activity) {
 function createIntentFilters(host, scheme, pathName) {
   var intentFilter = {
     '$': {
+      'android:exported': 'true',
       'android:autoVerify': 'true'
     },
     'action': [{
@@ -301,6 +302,7 @@ function createIntentFilters(host, scheme, pathName) {
   injectPathComponentIntoIntentFilter(intentFilter, pathName);
   var nfcIntentFilter = {
     '$': {
+      'android:exported': 'true',
       'android:autoVerify': 'true'
     },
     'action': [{
