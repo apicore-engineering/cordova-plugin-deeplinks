@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<plugin id="cordova-plugin-deeplinks" version="1.1.6" xmlns="http://apache.org/cordova/ns/plugins/1.0">
+<plugin id="cordova-plugin-deeplinks" version="1.1.7" xmlns="http://apache.org/cordova/ns/plugins/1.0">
     <name>Cordova Deeplinks Plugin</name>
     <description>
     Cordova plugin to add in your application support for Universal Links (iOS 9) and Deep Links (Android).
@@ -32,7 +32,7 @@
         <header-file src="src/ios/AppDelegate+CULPlugin.h" />
         <source-file src="src/ios/JS/CDVPluginResult+CULPlugin.m" target-dir="JS/" />
         <header-file src="src/ios/JS/CDVPluginResult+CULPlugin.h" target-dir="JS/" />
-        <source-file src="src/ios/JS ve/CDVInvokedUrlCommand+CULPlugin.m" target-dir="JS/" />
+        <source-file src="src/ios/JS/CDVInvokedUrlCommand+CULPlugin.m" target-dir="JS/" />
         <header-file src="src/ios/JS/CDVInvokedUrlCommand+CULPlugin.h" target-dir="JS/" />
         <source-file src="src/ios/Model/CULHost.m" target-dir="Model/" />
         <header-file src="src/ios/Model/CULHost.h" target-dir="Model/" />
