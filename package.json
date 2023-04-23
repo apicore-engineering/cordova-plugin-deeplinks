@@ -1,9 +1,9 @@
 {
-  "name": "@thing-it/cordova-plugin-deeplinks",
+  "name": "cordova-plugin-deeplinks",
   "version": "1.1.8",
   "description": "Cordova plugin to add in your application support for Universal Links (iOS 9) and Deep Links (Android). Basically, open application through the link in the browser.",
   "cordova": {
-    "id": "@thing-it/cordova-plugin-deeplinks",
+    "id": "cordova-plugin-deeplinks",
     "platforms": [
       "ios",
       "android"
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:thing-it/cordova-plugin-deeplinks.git"
+    "url": "git@github.com:apicore-engineering/cordova-plugin-deeplinks.git"
   },
   "keywords": [
     "cordova",
@@ -39,9 +39,9 @@
   "author": "Nikolay Demyankov for Nordnet Bank AB",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/thing-it/cordova-plugin-deeplinks/issues"
+    "url": "https://github.com/apicore-engineering/cordova-plugin-deeplinks/issues"
   },
-  "homepage": "https://github.com/thing-it/cordova-plugin-deeplinks#readme",
+  "homepage": "https://github.com/apicore-engineering/cordova-plugin-deeplinks#readme",
   "devDependencies": {
     "cordova-common": "^3.2.1",
     "path-scurry": "^1.6.1",
