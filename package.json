@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-deeplinks",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "Cordova plugin to add in your application support for Universal Links (iOS 9) and Deep Links (Android). Basically, open application through the link in the browser.",
   "cordova": {
     "id": "cordova-plugin-deeplinks",
@@ -34,7 +34,7 @@
     "node-version-compare": ">=1.0.1",
     "plist": ">=1.2.0",
     "rimraf": "^4.4.1",
-    "xml2js": "^0.4.23"
+    "xml2js": "^0.6.2"
   },
   "author": "Nikolay Demyankov for Nordnet Bank AB",
   "license": "MIT",
