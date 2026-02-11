@@ -30,6 +30,8 @@
         <header-file src="src/ios/CULPlugin.h" />
         <source-file src="src/ios/AppDelegate+CULPlugin.m" />
         <header-file src="src/ios/AppDelegate+CULPlugin.h" />
+        <source-file src="src/ios/SceneDelegate+CULPlugin.m"/>
+        <header-file src="src/ios/SceneDelegate+CULPlugin.h"/>
         <source-file src="src/ios/JS/CDVPluginResult+CULPlugin.m" target-dir="JS/" />
         <header-file src="src/ios/JS/CDVPluginResult+CULPlugin.h" target-dir="JS/" />
         <source-file src="src/ios/JS/CDVInvokedUrlCommand+CULPlugin.m" target-dir="JS/" />

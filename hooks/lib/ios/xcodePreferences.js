@@ -215,11 +215,31 @@ function projectRoot() {
   return context.opts.projectRoot;
 }
 
-function pathToEntitlementsFile() {
-  var configXmlHelper = new ConfigXmlHelper(context),
-    projectName = configXmlHelper.getProjectName(),
-    fileName = projectName + '.entitlements';
+/**
+ * Get project name by looking for .xcodeproj folder.
+ * This is needed because cordova-ios 8 always names the project folder "App"
+ * instead of using the app name from config.xml.
+ *
+ * @return {String} project name
+ */
+function getProjectNameFromXcodeproj() {
+  const iosPath = iosPlatformPath();
+  const files = fileSystem.readdirSync(iosPath);
 
+  for (let i = 0; i < files.length; i++) {
+    if (files[i].match(/\.xcodeproj$/)) {
+      return path.basename(files[i], '.xcodeproj');
+    }
+  }
+
+  // Fallback to config.xml
+  const configXmlHelper = new ConfigXmlHelper(context);
+  return configXmlHelper.getProjectName();
+}
+
+function pathToEntitlementsFile() {
+  const projectName = getProjectNameFromXcodeproj();
+  const fileName = `${projectName}.entitlements`;
   return path.join(projectName, 'Resources', fileName);
 }
 

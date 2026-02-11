@@ -158,14 +158,29 @@ function getProjectRoot() {
 }
 
 /**
- * Name of the project from config.xml
+ * Name of the project from .xcodeproj folder.
+ * This is needed because cordova-ios 8 always names the project folder "App"
+ * instead of using the app name from config.xml.
  *
  * @return {String} project name
  */
 function getProjectName() {
   if (projectName === undefined) {
-    var configXmlHelper = new ConfigXmlHelper(context);
-    projectName = configXmlHelper.getProjectName();
+    var iosPath = path.join(getProjectRoot(), 'platforms', 'ios');
+    var files = fs.readdirSync(iosPath);
+
+    for (var i = 0; i < files.length; i++) {
+      if (files[i].match(/\.xcodeproj$/)) {
+        projectName = path.basename(files[i], '.xcodeproj');
+        break;
+      }
+    }
+
+    // Fallback to config.xml
+    if (!projectName) {
+      var configXmlHelper = new ConfigXmlHelper(context);
+      projectName = configXmlHelper.getProjectName();
+    }
   }
 
   return projectName;
