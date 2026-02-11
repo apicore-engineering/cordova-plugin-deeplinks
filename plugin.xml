@@ -19,6 +19,7 @@
     <hook src="hooks/afterPrepareHook.js" type="after_prepare" />
     <hook src="hooks/beforePluginInstallHook.js" type="before_plugin_install" />
     <platform name="ios">
+        <hook src="hooks/iosBeforePrepareHook.js" type="before_prepare" />
         <config-file parent="/*" target="config.xml">
             <feature name="UniversalLinks">
                 <param name="ios-package" value="CULPlugin" />
