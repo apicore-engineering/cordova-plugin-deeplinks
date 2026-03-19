@@ -1,8 +1,8 @@
 //
-//  SceneDelegate+CULPlugin.m
+// SceneDelegate+CULPlugin.m
 //
-//  Created for cordova-ios@8 Scene API support
-//  Handles Universal Links via SceneDelegate instead of AppDelegate
+// Created for cordova-ios@8 Scene API support
+// Handles Universal Links via SceneDelegate instead of AppDelegate
 //
 
 #import "SceneDelegate+CULPlugin.h"
@@ -11,7 +11,7 @@
 #import <Cordova/CDV.h>
 
 /**
- *  Plugin name in config.xml
+ * Plugin name in config.xml
  */
 static NSString *const PLUGIN_NAME = @"UniversalLinks";
 
@@ -19,83 +19,106 @@ static NSString *const PLUGIN_NAME = @"UniversalLinks";
 
 /*
  In cordova-ios@8, the app uses Scene API, so user activities come through SceneDelegate
- instead of AppDelegate. We need to swizzle the SceneDelegate method to handle Universal Links.
- */
+ instead of AppDelegate. We swizzle two SceneDelegate methods:
+   1. scene:continueUserActivity:          - app already running (warm launch)
+   2. scene:willConnectToSession:options:  - app cold-launched via deeplink
+*/
 + (void)load {
     NSLog(@"[UniversalLinks] ===== LOADING UniversalLinks Category =====");
+
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        // Swizzle CDVSceneDelegate directly since SceneDelegate inherits from it
+
         Class targetClass = [CDVSceneDelegate class];
-        
         NSLog(@"[UniversalLinks] Using CDVSceneDelegate class: %@", targetClass);
 
+        // ------------------------------------------------------------------
+        // 1) Swizzle scene:continueUserActivity: (warm / already-running launch)
+        // ------------------------------------------------------------------
         SEL originalSEL = @selector(scene:continueUserActivity:);
         SEL swizzledSEL = @selector(culPlugin_scene:continueUserActivity:);
-        
+
         Method originalMethod = class_getInstanceMethod(targetClass, originalSEL);
         Method swizzledMethod = class_getInstanceMethod(targetClass, swizzledSEL);
-        
-        NSLog(@"[UniversalLinks] Original method: %@, Swizzled method: %@",
+
+        NSLog(@"[UniversalLinks] continueUserActivity - original: %@  swizzled: %@",
               originalMethod ? @"FOUND" : @"NOT FOUND",
               swizzledMethod ? @"FOUND" : @"NOT FOUND");
-        
+
         if (swizzledMethod) {
             if (originalMethod) {
-                // Method exists - swizzle it
                 method_exchangeImplementations(originalMethod, swizzledMethod);
                 NSLog(@"[UniversalLinks] Swizzled scene:continueUserActivity: in CDVSceneDelegate");
             } else {
-                // Method doesn't exist - add it
-                IMP swizzledIMP = method_getImplementation(swizzledMethod);
-                const char *swizzledTypes = method_getTypeEncoding(swizzledMethod);
-                
-                BOOL didAdd = class_addMethod(targetClass, originalSEL, swizzledIMP, swizzledTypes);
-                if (didAdd) {
-                    NSLog(@"[UniversalLinks] Added scene:continueUserActivity: to CDVSceneDelegate");
-                } else {
-                    NSLog(@"[UniversalLinks]  Failed to add method");
-                }
+                IMP imp           = method_getImplementation(swizzledMethod);
+                const char *types = method_getTypeEncoding(swizzledMethod);
+                BOOL didAdd       = class_addMethod(targetClass, originalSEL, imp, types);
+                NSLog(@"[UniversalLinks] Added scene:continueUserActivity: - %@",
+                      didAdd ? @"SUCCESS" : @"FAILED");
             }
-            NSLog(@"[UniversalLinks] ===== UniversalLinks Setup COMPLETE =====");
         } else {
-            NSLog(@"[UniversalLinks]  ERROR: Swizzled method not found");
+            NSLog(@"[UniversalLinks] ERROR: culPlugin_scene:continueUserActivity: not found");
         }
+
+        // ------------------------------------------------------------------
+        // 2) Swizzle scene:willConnectToSession:options: (cold launch)
+        // ------------------------------------------------------------------
+        SEL originalConnectSEL = @selector(scene:willConnectToSession:options:);
+        SEL swizzledConnectSEL = @selector(culPlugin_scene:willConnectToSession:options:);
+
+        Method originalConnectMethod = class_getInstanceMethod(targetClass, originalConnectSEL);
+        Method swizzledConnectMethod = class_getInstanceMethod(targetClass, swizzledConnectSEL);
+
+        NSLog(@"[UniversalLinks] willConnectToSession - original: %@  swizzled: %@",
+              originalConnectMethod ? @"FOUND" : @"NOT FOUND",
+              swizzledConnectMethod ? @"FOUND" : @"NOT FOUND");
+
+        if (swizzledConnectMethod) {
+            if (originalConnectMethod) {
+                method_exchangeImplementations(originalConnectMethod, swizzledConnectMethod);
+                NSLog(@"[UniversalLinks] Swizzled scene:willConnectToSession:options: in CDVSceneDelegate");
+            } else {
+                IMP imp           = method_getImplementation(swizzledConnectMethod);
+                const char *types = method_getTypeEncoding(swizzledConnectMethod);
+                BOOL didAdd       = class_addMethod(targetClass, originalConnectSEL, imp, types);
+                NSLog(@"[UniversalLinks] Added scene:willConnectToSession:options: - %@",
+                      didAdd ? @"SUCCESS" : @"FAILED");
+            }
+        } else {
+            NSLog(@"[UniversalLinks] ERROR: culPlugin_scene:willConnectToSession:options: not found");
+        }
+
+        NSLog(@"[UniversalLinks] ===== UniversalLinks Setup COMPLETE =====");
     });
 }
 
+// ----------------------------------------------------------------------------
+// WARM LAUNCH: app was already running when the deeplink was triggered
+// ----------------------------------------------------------------------------
 - (void)culPlugin_scene:(UIScene *)scene continueUserActivity:(NSUserActivity *)userActivity {
-    NSLog(@"[UniversalLinks] ===== UNIVERSAL LINK DETECTED =====");
-    NSLog(@"[UniversalLinks] 📱 scene:continueUserActivity: called");
+    NSLog(@"[UniversalLinks] ===== UNIVERSAL LINK DETECTED (warm launch) =====");
     NSLog(@"[UniversalLinks] Activity Type: %@", userActivity.activityType);
-    NSLog(@"[UniversalLinks] Webpage URL: %@", userActivity.webpageURL);
-    
+    NSLog(@"[UniversalLinks] Webpage URL:   %@", userActivity.webpageURL);
+
     BOOL handled = NO;
-    
-    // Handle Universal Links (NSUserActivityTypeBrowsingWeb) FIRST
-    if ([userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb] && userActivity.webpageURL != nil) {
+
+    if ([userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb] &&
+        userActivity.webpageURL != nil) {
+
         NSLog(@"[UniversalLinks] This IS a Universal Link!");
-        NSLog(@"[UniversalLinks] URL: %@", userActivity.webpageURL);
-        
-        // Get the view controller from the scene
+
         if ([scene isKindOfClass:[UIWindowScene class]]) {
-            NSLog(@"[UniversalLinks] Scene is UIWindowScene");
             UIWindowScene *windowScene = (UIWindowScene *)scene;
-            UIWindow *window = windowScene.windows.firstObject;
-            NSLog(@"[UniversalLinks] Windows count: %lu", (unsigned long)windowScene.windows.count);
-            
+            UIWindow *window           = windowScene.windows.firstObject;
+
             if (window && window.rootViewController) {
-                NSLog(@"[UniversalLinks] Window and rootViewController found");
                 UIViewController *rootVC = window.rootViewController;
                 NSLog(@"[UniversalLinks] Root VC class: %@", NSStringFromClass([rootVC class]));
-                
-                // Get the Cordova view controller
+
                 if ([rootVC isKindOfClass:[CDVViewController class]]) {
-                    NSLog(@"[UniversalLinks] CDVViewController found");
                     CDVViewController *cordovaVC = (CDVViewController *)rootVC;
-                    
-                    // Get instance of the plugin and let it handle the userActivity object
                     CULPlugin *plugin = [cordovaVC getCommandInstance:PLUGIN_NAME];
+
                     if (plugin != nil) {
                         NSLog(@"[UniversalLinks] Plugin instance found, handling...");
                         handled = [plugin handleUserActivity:userActivity];
@@ -110,26 +133,91 @@ static NSString *const PLUGIN_NAME = @"UniversalLinks";
                 NSLog(@"[UniversalLinks] No window or rootViewController found");
             }
         } else {
-            NSLog(@"[UniversalLinks]  Scene is not UIWindowScene, it's: %@", NSStringFromClass([scene class]));
+            NSLog(@"[UniversalLinks] Scene is not UIWindowScene: %@",
+                  NSStringFromClass([scene class]));
         }
-        
+
         if (handled) {
-            // We handled it, don't pass to other plugins
-            NSLog(@"[UniversalLinks] ===== END UNIVERSAL LINK HANDLING (handled by UniversalLinks) =====");
+            NSLog(@"[UniversalLinks] ===== END (handled by UniversalLinks) =====");
             return;
         }
     } else {
         NSLog(@"[UniversalLinks] Not a Universal Link");
-        NSLog(@"[UniversalLinks] Expected: %@ with webpageURL", NSUserActivityTypeBrowsingWeb);
     }
-    
-    // Not our activity type or we didn't handle it - call through to any other swizzled implementations
-    // Due to method swizzling, this actually calls what was the "original" implementation
-    NSLog(@"[UniversalLinks] Passing to other handlers (calling swizzled method)...");
+
+    // Pass through to any other swizzled implementations (or the original).
+    // Due to method swizzling this actually calls the original implementation.
+    NSLog(@"[UniversalLinks] Passing to other handlers...");
     [self culPlugin_scene:scene continueUserActivity:userActivity];
-    
-    NSLog(@"[UniversalLinks] ===== END UNIVERSAL LINK HANDLING (passed to other handler) =====");
+    NSLog(@"[UniversalLinks] ===== END (passed to other handler) =====");
+}
+
+// ----------------------------------------------------------------------------
+// COLD LAUNCH: app was not running; iOS launched it directly via the deeplink.
+// connectionOptions.userActivities holds the incoming Universal Link.
+// ----------------------------------------------------------------------------
+- (void)culPlugin_scene:(UIScene *)scene
+    willConnectToSession:(UISceneSession *)session
+                 options:(UISceneConnectionOptions *)connectionOptions {
+    NSLog(@"[UniversalLinks] ===== COLD LAUNCH DEEPLINK CHECK =====");
+
+    // Call the original (swizzled) implementation FIRST so Cordova can finish
+    // its own scene setup before we try to reach into it.
+    [self culPlugin_scene:scene willConnectToSession:session options:connectionOptions];
+
+    // Look for a Universal Link in the connection options
+    NSUserActivity *activity = nil;
+    for (NSUserActivity *a in connectionOptions.userActivities) {
+        if ([a.activityType isEqualToString:NSUserActivityTypeBrowsingWeb] && a.webpageURL) {
+            activity = a;
+            break;
+        }
+    }
+
+    if (!activity) {
+        NSLog(@"[UniversalLinks] No Universal Link in cold-launch options");
+        return;
+    }
+
+    NSLog(@"[UniversalLinks] Cold-launch Universal Link found: %@", activity.webpageURL);
+
+    if (![scene isKindOfClass:[UIWindowScene class]]) { return; }
+
+    UIWindowScene *windowScene = (UIWindowScene *)scene;
+
+    // Cordova's WebView may not be ready yet at this point, so we retry until
+    // the plugin instance becomes available (up to ~3 seconds total).
+    __block int attempts = 0;
+    __block void (^tryHandle)(void);
+    tryHandle = ^{
+        attempts++;
+
+        UIWindow *window         = windowScene.windows.firstObject;
+        UIViewController *rootVC = window.rootViewController;
+
+        if ([rootVC isKindOfClass:[CDVViewController class]]) {
+            CDVViewController *cordovaVC = (CDVViewController *)rootVC;
+            CULPlugin *plugin = [cordovaVC getCommandInstance:PLUGIN_NAME];
+
+            if (plugin) {
+                NSLog(@"[UniversalLinks] Cold-launch: handling after %d attempt(s)", attempts);
+                [plugin handleUserActivity:activity];
+                return;
+            }
+        }
+
+        if (attempts < 10) {
+            NSLog(@"[UniversalLinks] Cold-launch: plugin not ready yet, retrying... (%d/10)", attempts);
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)),
+                           dispatch_get_main_queue(), tryHandle);
+        } else {
+            NSLog(@"[UniversalLinks] Cold-launch: gave up waiting for plugin after 10 attempts");
+        }
+    };
+
+    tryHandle();
+
+    NSLog(@"[UniversalLinks] ===== END COLD LAUNCH DEEPLINK CHECK =====");
 }
 
 @end
-
