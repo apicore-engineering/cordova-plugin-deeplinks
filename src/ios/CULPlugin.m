@@ -5,6 +5,7 @@
 //
 
 #import "CULPlugin.h"
+#import <Cordova/CDVPluginNotifications.h>
 #import "CULConfigXmlParser.h"
 #import "CULPath.h"
 #import "CULHost.h"
@@ -20,12 +21,35 @@
 
 @end
 
+/**
+ *  A connecting UIScene can carry the launch activity before any plugin object exists,
+ *  so the activity has to outlive the delivery and be replayed on initialization.
+ */
+static __weak CULPlugin *_activePlugin = nil;
+static NSUserActivity *_pendingUserActivity = nil;
+
 @implementation CULPlugin
 
 #pragma mark Public API
 
 - (void)pluginInitialize {
     [self localInit];
+
+    // On cordova-ios 8 iOS hands universal links to the UIScene delegate, which forwards them
+    // as this notification instead of calling the AppDelegate hook.
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(onContinueUserActivity:)
+                                                 name:CDVPluginContinueUserActivityNotification
+                                               object:nil];
+
+    _activePlugin = self;
+
+    NSUserActivity *pendingUserActivity = _pendingUserActivity;
+    _pendingUserActivity = nil;
+    if (pendingUserActivity) {
+        [self handleUserActivity:pendingUserActivity];
+    }
+
     // Can be used for testing.
     // Just uncomment, close the app and reopen it. That will simulate application launch from the link.
 //    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onResume:) name:UIApplicationWillEnterForegroundNotification object:nil];
@@ -50,9 +74,22 @@
     }
 }
 
+- (void)onContinueUserActivity:(NSNotification *)notification {
+    id userActivity = notification.object;
+    if (![userActivity isKindOfClass:[NSUserActivity class]]) {
+        return;
+    }
+
+    [self handleUserActivity:userActivity];
+}
+
 - (BOOL)handleUserActivity:(NSUserActivity *)userActivity {
+    if (![userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb] || userActivity.webpageURL == nil) {
+        return NO;
+    }
+
     [self localInit];
-    
+
     NSURL *launchURL = userActivity.webpageURL;
     CULHost *host = [self findHostByURL:launchURL];
     if (host == nil) {
@@ -62,6 +99,16 @@
     [self storeEventWithHost:host originalURL:launchURL];
     
     return YES;
+}
+
++ (void)handleUserActivityFromScene:(NSUserActivity *)userActivity {
+    CULPlugin *plugin = _activePlugin;
+    if (plugin) {
+        [plugin handleUserActivity:userActivity];
+        return;
+    }
+
+    _pendingUserActivity = userActivity;
 }
 
 - (void)onAppTerminate {

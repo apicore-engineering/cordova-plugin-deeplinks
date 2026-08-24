@@ -35,4 +35,13 @@
  */
 - (BOOL)handleUserActivity:(NSUserActivity *)userActivity;
 
+/**
+ *  Try to handle application launch from a link that iOS delivered to a connecting UIScene.
+ *  A cold start connects the scene before the plugin object exists, so the activity is kept
+ *  until the plugin initializes and can consume it.
+ *
+ *  @param userActivity object with information about the application launch
+ */
++ (void)handleUserActivityFromScene:(NSUserActivity *)userActivity;
+
 @end
