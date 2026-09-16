@@ -1,7 +1,6 @@
 /*
 Script activates support for Universal Links in the application by setting proper preferences in the xcode project file.
 Which is:
-- deployment target set to iOS 9.0
 - .entitlements file added to project PBXGroup and PBXFileReferences section
 - path to .entitlements file added to Code Sign Entitlements preference
 */
@@ -55,26 +54,10 @@ function activateAssociativeDomains(xcodeProject) {
   var entitlementsFilePath = pathToEntitlementsFile();
   var config;
   var buildSettings;
-  var deploymentTargetIsUpdated;
 
   for (config in configurations) {
     buildSettings = configurations[config].buildSettings;
     buildSettings['CODE_SIGN_ENTITLEMENTS'] = '"' + entitlementsFilePath + '"';
-
-    // if deployment target is less then the required one - increase it
-    if (buildSettings['IPHONEOS_DEPLOYMENT_TARGET']) {
-      if (compare(buildSettings['IPHONEOS_DEPLOYMENT_TARGET'], IOS_DEPLOYMENT_TARGET) == -1) {
-        buildSettings['IPHONEOS_DEPLOYMENT_TARGET'] = IOS_DEPLOYMENT_TARGET;
-        deploymentTargetIsUpdated = true;
-      }
-    } else {
-      buildSettings['IPHONEOS_DEPLOYMENT_TARGET'] = IOS_DEPLOYMENT_TARGET;
-      deploymentTargetIsUpdated = true;
-    }
-  }
-
-  if (deploymentTargetIsUpdated) {
-    console.log('IOS project now has deployment target set as: ' + IOS_DEPLOYMENT_TARGET);
   }
 
   console.log('IOS project Code Sign Entitlements now set to: ' + entitlementsFilePath);
